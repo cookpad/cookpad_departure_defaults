@@ -1,0 +1,1 @@
+# cookpad_departure_defaults
