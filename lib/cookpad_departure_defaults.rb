@@ -4,7 +4,7 @@ require "departure"
 module CookpadDepartureDefaults
 
   def self.pt_plugin_path
-    File.join(File.expand_path(__FILE__),
+    File.join(File.expand_path(__dir__),
               "cookpad_departure_defaults",
               "pt-online-schema-change-fast-rebuild-constraints.pl")
   end
