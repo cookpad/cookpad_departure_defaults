@@ -1,6 +1,6 @@
 # CookpadDepartureDefaults
 
-- Includes the `pt-online-schema-change-fast-rebuild-constraints.pl` plugin.
+- Includes the `pt-online-schema-change-plugin.pl` plugin.
 - Sets global Departure defaults to a reasonable base set.
 
 ## Installation
