@@ -6,7 +6,7 @@ module CookpadDepartureDefaults
   def self.pt_plugin_path
     File.join(__dir__,
               "cookpad_departure_defaults",
-              "pt-online-schema-change-fast-rebuild-constraints.pl")
+              "pt-online-schema-change-plugin.pl")
   end
 
   def self.global_percona_args
