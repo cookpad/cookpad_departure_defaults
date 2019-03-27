@@ -21,7 +21,8 @@ module CookpadDepartureDefaults
         --alter-foreign-keys-method\ rebuild_constraints).join(" ")
   end
 
-  Departure.configure {}
-  Departure.configuration.global_percona_args = global_percona_args
-
+  Departure.configure do |config|
+    config.global_percona_args = global_percona_args
+    config.tmp_path = ENV['DEPARTURE_TMP_DIR'] if ENV['DEPARTURE_TMP_DIR']
+  end
 end
