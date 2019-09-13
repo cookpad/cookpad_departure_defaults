@@ -25,28 +25,31 @@ sub after_copy_rows {
   my $tp = TableParser->new;
   my $dbh = $self->{cxn}->dbh;
   my $ddl =  $tp->get_create_table($dbh, $new_tbl->{db}, $new_tbl->{tbl});
-  my $fks = $tp->get_fks($ddl, {database => $new_tbl->{db}});
-  foreach my $name (keys %$fks) {
-    my $fk = $fks->{$name};
-    if ($fk->{parent_tblname} eq $orig_tbl->{name}) {
-      # Rebuild a self-referencing foreign key in a new table to make it refer to itself.
-      (my $constraint = $fk->{ddl}) =~ s/REFERENCES[^\(]+/REFERENCES $new_tbl->{name} /;
+  my $q = $self->{Quoter};
+  my $quoted_orig_tbl = $q->quote($orig_tbl->{tbl});
+  my @constraints = $ddl =~ m/^\s+(CONSTRAINT.+?REFERENCES\s$quoted_orig_tbl.+)$/mg;
+  foreach my $constraint (@constraints) {
+    # Remove a trailing comma in case there are multiple constraints on the table.
+    $constraint =~ s/,$//;
 
-      # Rename the constraint to avoid a conflict.
-      my $new_name;
-      if ($name =~ /^__/) {
-        ($new_name = $name) =~ s/^__//;
-      } else {
-        $new_name = '_' . $name;
-      }
-      $constraint =~ s/CONSTRAINT `$name`/CONSTRAINT `$new_name`/;
+    # Rebuild a self-referencing foreign key in a new table to make it refer to itself.
+    $constraint =~ s/REFERENCES[^\(]+/REFERENCES $new_tbl->{name} /;
 
-      print "Fixing self-referencing foreign key $name in table $new_tbl->{name}...\n";
-      $dbh->do("SET foreign_key_checks = 0");
-      my $sql = "ALTER TABLE $new_tbl->{name} DROP FOREIGN KEY `$name`, ADD $constraint";
-      $dbh->do($sql);
-      $dbh->do("SET foreign_key_checks = 1");
+    # Rename the constraint to avoid a conflict.
+    my ($name) = $constraint =~ m/CONSTRAINT\s+`([^`]+)`/;
+    my $new_name;
+    if ($name =~ /^__/) {
+      ($new_name = $name) =~ s/^__//;
+    } else {
+      $new_name = '_' . $name;
     }
+    $constraint =~ s/CONSTRAINT `$name`/CONSTRAINT `$new_name`/;
+
+    print "Fixing self-referencing foreign key $name in table $new_tbl->{name}...\n";
+    $dbh->do("SET foreign_key_checks = 0");
+    my $sql = "ALTER TABLE $new_tbl->{name} DROP FOREIGN KEY `$name`, ADD $constraint";
+    $dbh->do($sql);
+    $dbh->do("SET foreign_key_checks = 1");
   }
 }
 
